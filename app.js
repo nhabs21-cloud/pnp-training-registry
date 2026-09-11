@@ -268,31 +268,35 @@ async function connectWallet() {
 // This allows us to keep your existing deployed contract.
 // ============================================================
 
+
 async function updateTotalCertificates() {
 
-    if (!contract) {
-
+    if (!contract || !provider) {
         return;
     }
 
-
     try {
 
-        // Create event filter
+        const latestBlock =
+            await provider.getBlockNumber();
+
+        // Search the most recent 5,000 blocks
+        const fromBlock =
+            Math.max(
+                0,
+                latestBlock - 5000
+            );
+
         const filter =
             contract.filters.CertificateIssued();
 
-
-        // Read events
         const events =
             await contract.queryFilter(
                 filter,
-                0,
-                "latest"
+                fromBlock,
+                latestBlock
             );
 
-
-        // Display count
         document
             .getElementById(
                 "totalCertificates"
@@ -300,12 +304,10 @@ async function updateTotalCertificates() {
             .textContent =
             events.length;
 
-
         console.log(
-            "Total certificates:",
+            "Total Certificates:",
             events.length
         );
-
 
     } catch (error) {
 
@@ -314,16 +316,20 @@ async function updateTotalCertificates() {
             error
         );
 
-
-        // Don't break the rest of the application
         document
             .getElementById(
                 "totalCertificates"
             )
             .textContent =
-            "—";
+            "Error";
+
     }
 }
+
+
+
+
+
 
 
 // ============================================================
