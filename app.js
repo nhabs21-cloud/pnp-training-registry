@@ -280,39 +280,61 @@ async function updateTotalCertificates() {
         const latestBlock =
             await provider.getBlockNumber();
 
-        // Search the most recent 5,000 blocks
-        const fromBlock =
+        // Look back over the most recent 10,000 blocks
+        const startBlock =
             Math.max(
                 0,
-                latestBlock - 5000
+                latestBlock - 10000
             );
+
+        const chunkSize = 500;
+
+        let total = 0;
 
         const filter =
             contract.filters.CertificateIssued();
 
-        const events =
-            await contract.queryFilter(
-                filter,
-                fromBlock,
-                latestBlock
+        for (
+            let fromBlock = startBlock;
+            fromBlock <= latestBlock;
+            fromBlock += chunkSize
+        ) {
+
+            const toBlock =
+                Math.min(
+                    fromBlock + chunkSize - 1,
+                    latestBlock
+                );
+
+            console.log(
+                `Checking blocks ${fromBlock} - ${toBlock}`
             );
+
+            const events =
+                await contract.queryFilter(
+                    filter,
+                    fromBlock,
+                    toBlock
+                );
+
+            total += events.length;
+        }
 
         document
             .getElementById(
                 "totalCertificates"
             )
-            .textContent =
-            events.length;
+            .textContent = total;
 
         console.log(
-            "Total Certificates:",
-            events.length
+            "TOTAL CERTIFICATES:",
+            total
         );
 
     } catch (error) {
 
         console.error(
-            "Unable to read certificate events:",
+            "TOTAL CERTIFICATES ERROR:",
             error
         );
 
@@ -320,9 +342,7 @@ async function updateTotalCertificates() {
             .getElementById(
                 "totalCertificates"
             )
-            .textContent =
-            "Error";
-
+            .textContent = "Error";
     }
 }
 
