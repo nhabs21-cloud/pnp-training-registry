@@ -280,55 +280,39 @@ async function updateTotalCertificates() {
         const latestBlock =
             await provider.getBlockNumber();
 
-        // Look back over the most recent 10,000 blocks
-        const startBlock =
+        // Sepolia RPC limit is 10,000 blocks.
+        // Search only the latest 9,000 blocks.
+        const fromBlock =
             Math.max(
                 0,
-                latestBlock - 10000
+                latestBlock - 9000
             );
-
-        const chunkSize = 500;
-
-        let total = 0;
 
         const filter =
             contract.filters.CertificateIssued();
 
-        for (
-            let fromBlock = startBlock;
-            fromBlock <= latestBlock;
-            fromBlock += chunkSize
-        ) {
+        console.log(
+            "Searching CertificateIssued events from:",
+            fromBlock,
+            "to:",
+            latestBlock
+        );
 
-            const toBlock =
-                Math.min(
-                    fromBlock + chunkSize - 1,
-                    latestBlock
-                );
-
-            console.log(
-                `Checking blocks ${fromBlock} - ${toBlock}`
+        const events =
+            await contract.queryFilter(
+                filter,
+                fromBlock,
+                latestBlock
             );
 
-            const events =
-                await contract.queryFilter(
-                    filter,
-                    fromBlock,
-                    toBlock
-                );
-
-            total += events.length;
-        }
-
         document
-            .getElementById(
-                "totalCertificates"
-            )
-            .textContent = total;
+            .getElementById("totalCertificates")
+            .textContent =
+            events.length;
 
         console.log(
             "TOTAL CERTIFICATES:",
-            total
+            events.length
         );
 
     } catch (error) {
@@ -339,10 +323,9 @@ async function updateTotalCertificates() {
         );
 
         document
-            .getElementById(
-                "totalCertificates"
-            )
-            .textContent = "Error";
+            .getElementById("totalCertificates")
+            .textContent =
+            "Error";
     }
 }
 
